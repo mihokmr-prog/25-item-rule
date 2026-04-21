@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>25個ルール</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background-color: #111 !important; }
+  body {
+    font-family: 'Helvetica Neue', sans-serif;
+    background: #111 !important;
+    color: #fff;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  #count {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(100px, 38vw, 260px);
+    font-weight: 400;
+    letter-spacing: 8px;
+    line-height: 1;
+    color: #ffffff;
+    transition: transform 0.05s ease, color 0.3s ease;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  #count.bump {
+    transform: scale(1.08);
+  }
+  .controls {
+    width: 100%;
+    padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .buttons {
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    font-size: 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.1s;
+    height: 64px;
+  }
+  button:active { opacity: 0.5; }
+  #btn-minus { background: #333; color: #fff; flex: 1; }
+  #btn-plus  { background: #fff; color: #111; font-size: 28px; flex: 2; }
+  #btn-reset { background: #222; color: #555; font-size: 12px; width: 100%; height: 44px; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+
+<div id="count">0</div>
+
+<div class="controls">
+  <div class="buttons">
+    <button id="btn-minus">−</button>
+    <button id="btn-plus">＋</button>
+  </div>
+  <button id="btn-reset">RESET</button>
+</div>
+
+<script>
+  const el = document.getElementById('count');
+  let n = parseInt(localStorage.getItem('counter') ?? '0');
+
+  let audioCtx = null;
+
+  function beep() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume().then(() => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    });
+  }
+
+  function update() {
+    el.textContent = n;
+    localStorage.setItem('counter', n);
+    if (n >= 50)      el.style.color = '#ff4444';
+    else if (n >= 25) el.style.color = '#ffaa00';
+    else              el.style.color = '#ffffff';
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  update();
+
+  document.getElementById('btn-plus').addEventListener('click', () => { n++; beep(); update(); });
+  document.getElementById('btn-minus').addEventListener('click', () => { n--; update(); });
+  document.getElementById('btn-reset').addEventListener('click', () => { n = 0; update(); });
+
+  document.body.addEventListener('click', e => {
+    if (!e.target.closest('button')) { n++; beep(); update(); }
+  });
+</script>
+</body>
+</html>
